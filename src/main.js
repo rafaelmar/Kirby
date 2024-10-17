@@ -1,7 +1,8 @@
 import kaplay from "kaplay"
-import makeBackground from './utils'
+import { makeBackground, goToGame } from './utils'
 import SCALE_FACTOR from './constants'
 import { makePlayer } from "./player";
+import { makeScoreBox } from "./scoreBox";
 
 const k = kaplay({
     width: 1280,
@@ -58,16 +59,12 @@ k.scene("start", async () => {
         k.area(),
         k.anchor("center"),
     ])
-    const goTogame = () => {
-        k.play("confirm")
-        k.go("main")
-    }
 
-    playBtn.onClick(goTogame)
+    playBtn.onClick(() => goToGame(k))
 
-    k.onKeyPress("space", goTogame)
+    k.onKeyPress("space", () => goToGame)
 
-    k.onGamepadButton("south", goTogame)
+    k.onGamepadButton("south", () => goToGame)
 })
 
 k.scene("main", async () => {
@@ -134,13 +131,17 @@ k.scene("main", async () => {
     const player = k.add(makePlayer(k))
     player.pos = k.vec2(600, 250);
     player.setControls()
-    player.onCollide("obstacle", () => {
+    player.onCollide("obstacle", async () => {
         if (player.isDead) {
-            k.play("hurt")
-            platforms.speed = 0;
-            player.disableControls()
-            player.isDead = true
+            return makeScoreBox(k, 600, 25)
         }
+
+        k.play("hurt")
+        platforms.speed = 0;
+        player.disableControls()
+        k.add(await makeScoreBox(k, k.center(), score))
+        player.isDead = true
+
     })
 })
 
